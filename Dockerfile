@@ -7,20 +7,33 @@ ARG UID=1000
 ARG GID=1000
 ARG RELEASE_URL="https://rabbits.srht.site/uxn/uxn-essentials-lin64.tar.gz"
 ENV RELEASE_URL=${RELEASE_URL}
-ENV RELEASE=${RELEASE}
 ENV USERNAME=uxn
 
 RUN addgroup --system --gid ${GID} ${USERNAME} \
-    && useradd -g ${USERNAME} -u ${UID} ${USERNAME}
+    && useradd -m -g ${USERNAME} -u ${UID} ${USERNAME}
 
-COPY scripts/vnc.sh /tmp/vnc.sh 
+COPY ./entrypoint.sh /entrypoint.sh
+COPY ./supervisord /supervisord
 
-RUN chmod +x /tmp/vnc.sh \
-    && /tmp/vnc.sh \
-    && rm /tmp/vnc.sh
+# Setup demo environment variables
+ENV LANG=en_US.UTF-8 \
+    LANGUAGE=en_US.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    DISPLAY=:0.0 \
+    DISPLAY_DIMENSIONS=1024x768 \
+    RUN_FLUXBOX=yes
 
 RUN apt-get update \
-    && apt-get install -y curl libsdl2-dev \
+    && apt-get install -y \
+    curl \
+    libsdl2-dev \
+    fluxbox \
+    net-tools \
+    novnc \
+    supervisor \
+    x11vnc \
+    xterm \
+    xvfb \
     && apt-get clean && rm -rf /var/lib/apt/lists/
 
 RUN cd /tmp/ \
@@ -28,7 +41,8 @@ RUN cd /tmp/ \
     && tar -zxvf uxn.tar.gz \
     && rm  uxn.tar.gz \
     && cd uxn/ \
-    && mv *.rom /home/uxn/ \
+    && mkdir -p /home/${USERNAME}/roms/ \
+    && mv *.rom /home/${USERNAME}/roms/ \
     && mv uxn* /usr/local/bin/ \
     && cd ../ \
     && rm -rf uxn \
@@ -37,4 +51,5 @@ RUN cd /tmp/ \
 USER ${USERNAME}
 WORKDIR /home/${USERNAME}
 
-CMD [ "/usr/local/bin/uxnemu" ]
+CMD ["bash", "/entrypoint.sh"]
+EXPOSE 6080
