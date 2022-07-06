@@ -12,7 +12,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: uxn 
+  IMAGE_NAME: ncatelli/uxn 
 
 jobs:
   get_version:
